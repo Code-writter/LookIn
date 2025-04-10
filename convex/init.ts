@@ -3,5 +3,5 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 
 // Create a Convex client
 export const convex = new ConvexReactClient(
-  import.meta.env.VITE_CONVEX_URL as string
+  `https://standing-blackbird-559.convex.cloud` // Replace with your Convex URL
 );

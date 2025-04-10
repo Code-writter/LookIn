@@ -9,7 +9,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen primary-bg">
       <Navbar />
       
       <div className="container mx-auto px-4 py-12 md:px-6 lg:px-8">
@@ -17,19 +17,20 @@ const Index = () => {
           {/* Hero Section */}
           <div className="mb-16 mt-8 grid items-center gap-12 md:grid-cols-2">
             <div>
-              <h1 className="mb-4 text-4xl font-bold tracking-tight text-neutral-900 md:text-5xl">
-                Vision Attendance Hub
+              <h1 className="mb-4 text-4xl font-bold tracking-tight text-neutral-900 dark:text-white md:text-5xl">
+                Attendance Hub
               </h1>
               <p className="mb-6 text-xl text-neutral-600">
                 Modern face recognition system for tracking attendance seamlessly and securely.
               </p>
               <div className="flex flex-col space-y-3 sm:flex-row sm:space-x-3 sm:space-y-0">
-                <Button onClick={() => navigate("/attendance")} size="lg">
-                  Mark Attendance
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/register")} size="lg">
+                <Button className=" shadow-lg" onClick={() => navigate("/register")} size="lg">
                   Register New User
                 </Button>
+                <Button className=" shadow-lg" variant="secondary" onClick={() => navigate("/attendance")} size="lg">
+                  Mark Attendance
+                </Button>
+
               </div>
             </div>
             <div className="flex items-center justify-center">
@@ -47,7 +48,7 @@ const Index = () => {
               Key Features
             </h2>
             <div className="grid gap-8 md:grid-cols-3">
-              <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="  rounded-lg border border-neutral-200 bg-white p-6 shadow-lg transition-all hover:shadow-md">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100 text-neutral-800">
                   <UserCheck className="h-6 w-6" />
                 </div>
@@ -57,7 +58,7 @@ const Index = () => {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-lg transition-all hover:shadow-md">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100 text-neutral-800">
                   <UserPlus className="h-6 w-6" />
                 </div>
@@ -67,7 +68,7 @@ const Index = () => {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-lg transition-all hover:shadow-md">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100 text-neutral-800">
                   <BarChart3 className="h-6 w-6" />
                 </div>

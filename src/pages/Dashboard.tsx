@@ -32,24 +32,24 @@ const Dashboard = () => {
   // Get all attendance records
   const attendanceData = useQuery(api.attendance.getAllAttendance);
 
-  React.useEffect(() => {
-    // Check if user is admin
-    const checkUserRole = async () => {
-      if (isLoaded && userId) {
-        const hasAdminRole = has({ role: "admin" });
+  // React.useEffect(() => {
+  //   // Check if user is admin
+  //   const checkUserRole = async () => {
+  //     if (isLoaded && userId) {
+  //       const hasAdminRole = has({ role: "admin" });
         
-        if (!hasAdminRole) {
-          toast({
-            title: "Access Denied",
-            description: "You don't have permission to view this page.",
-            variant: "destructive",
-          });
-        }
-      }
-    };
+  //       if (!hasAdminRole) {
+  //         toast({
+  //           title: "Access Denied",
+  //           description: "You don't have permission to view this page.",
+  //           variant: "destructive",
+  //         });
+  //       }
+  //     }
+  //   };
 
-    checkUserRole();
-  }, [isLoaded, userId, has, toast]);
+  //   checkUserRole();
+  // }, [isLoaded, userId, has, toast]);
 
   if (!isLoaded) {
     return <div>Loading...</div>;

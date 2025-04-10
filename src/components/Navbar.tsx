@@ -4,17 +4,20 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { UserRound, Home, Calendar, Users, LayoutDashboard } from "lucide-react";
 import { useAuth, SignInButton, SignOutButton } from "@clerk/clerk-react";
+import { ModeToggle } from "@/hooks/mode-toggle";
 
 const Navbar = () => {
-  const { isSignedIn, user, has } = useAuth();
+  const { isSignedIn, has } = useAuth();
   const isAdmin = has?.({ role: "admin" }) || false;
 
   return (
-    <nav className="border-b border-neutral-200 bg-white shadow-sm">
+    <nav className=" max-w-96  border-b border-neutral-200 shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center space-x-1">
           <UserRound className="h-6 w-6 text-neutral-800" />
-          <span className="text-lg font-semibold text-neutral-800">Vision Attendance</span>
+          <span className=" font-[Orbitron] text-lg font-semibold text-neutral-800">
+            NAME
+          </span>
         </div>
         <div className="hidden md:flex md:items-center md:space-x-6">
           <Link to="/" className="flex items-center text-neutral-600 hover:text-neutral-900">
@@ -51,6 +54,9 @@ const Navbar = () => {
               </Button>
             </SignInButton>
           )}
+          <div>
+            <ModeToggle />
+          </div>
         </div>
         <Button variant="outline" size="icon" className="md:hidden">
           <span className="sr-only">Open menu</span>
