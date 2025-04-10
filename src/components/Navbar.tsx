@@ -2,9 +2,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { UserRound, Home, Calendar, Users } from "lucide-react";
+import { UserRound, Home, Calendar, Users, LayoutDashboard } from "lucide-react";
+import { useAuth, SignInButton, SignOutButton } from "@clerk/clerk-react";
 
 const Navbar = () => {
+  const { isSignedIn, user, has } = useAuth();
+  const isAdmin = has?.({ role: "admin" }) || false;
+
   return (
     <nav className="border-b border-neutral-200 bg-white shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
@@ -16,15 +20,37 @@ const Navbar = () => {
           <Link to="/" className="flex items-center text-neutral-600 hover:text-neutral-900">
             <Home className="mr-1 h-4 w-4" /> Home
           </Link>
-          <Link to="/register" className="flex items-center text-neutral-600 hover:text-neutral-900">
-            <Users className="mr-1 h-4 w-4" /> Register
-          </Link>
-          <Link to="/attendance" className="flex items-center text-neutral-600 hover:text-neutral-900">
-            <Calendar className="mr-1 h-4 w-4" /> Attendance
-          </Link>
-          <Button variant="outline" size="sm">
-            Login
-          </Button>
+          
+          {isSignedIn && (
+            <>
+              <Link to="/register" className="flex items-center text-neutral-600 hover:text-neutral-900">
+                <Users className="mr-1 h-4 w-4" /> Register
+              </Link>
+              <Link to="/attendance" className="flex items-center text-neutral-600 hover:text-neutral-900">
+                <Calendar className="mr-1 h-4 w-4" /> Attendance
+              </Link>
+              
+              {isAdmin && (
+                <Link to="/dashboard" className="flex items-center text-neutral-600 hover:text-neutral-900">
+                  <LayoutDashboard className="mr-1 h-4 w-4" /> Dashboard
+                </Link>
+              )}
+            </>
+          )}
+          
+          {isSignedIn ? (
+            <SignOutButton>
+              <Button variant="outline" size="sm">
+                Sign Out
+              </Button>
+            </SignOutButton>
+          ) : (
+            <SignInButton mode="modal">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </SignInButton>
+          )}
         </div>
         <Button variant="outline" size="icon" className="md:hidden">
           <span className="sr-only">Open menu</span>
