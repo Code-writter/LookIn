@@ -14,6 +14,9 @@ import { Label } from "@/components/ui/label";
 import FaceDetection from "@/components/FaceDetection";
 import Navbar from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const Register = () => {
   const [personName, setPersonName] = useState("");
@@ -22,6 +25,9 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userId } = useAuth();
+  
+  const registerUserMutation = useMutation(api.users.registerUser);
 
   const handleStartRegistration = () => {
     if (!personName.trim() || !personId.trim()) {
@@ -39,15 +45,17 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       
-      // In a real app, this data would be sent to your backend/database
-      console.log("Face data detected:", {
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Register user in Convex
+      await registerUserMutation({
         name: personName,
-        id: personId,
+        userId: userId,
+        personId: personId,
         faceDescriptor: faceData.descriptor,
       });
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       
       toast({
         title: "Registration successful",
@@ -114,6 +122,7 @@ const Register = () => {
                 <Button
                   className="w-full"
                   onClick={handleStartRegistration}
+                  disabled={isSubmitting}
                 >
                   Continue to Face Registration
                 </Button>
@@ -139,6 +148,7 @@ const Register = () => {
                   variant="outline" 
                   className="w-full"
                   onClick={() => setShowFaceCapture(false)}
+                  disabled={isSubmitting}
                 >
                   Back to User Details
                 </Button>

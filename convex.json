@@ -1,0 +1,5 @@
+
+{
+  "functions": "./convex/",
+  "schema": "./convex/schema.ts"
+}

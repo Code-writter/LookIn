@@ -1,59 +1,79 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FaceDetection from "@/components/FaceDetection";
 import Navbar from "@/components/Navbar";
 import { Clock, Check } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useAuth } from "@clerk/clerk-react";
 
 type AttendanceRecord = {
-  id: string;
-  name: string;
+  _id: string;
+  personName: string;
   time: string;
   date: string;
 };
 
 const Attendance = () => {
   const [recognizedPerson, setRecognizedPerson] = useState<string | null>(null);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      time: "08:45 AM",
-      date: "2025-04-10",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      time: "09:02 AM",
-      date: "2025-04-10",
-    },
-    {
-      id: "3",
-      name: "Michael Johnson",
-      time: "08:55 AM",
-      date: "2025-04-10",
-    },
-  ]);
   const { toast } = useToast();
+  const { userId } = useAuth();
+  
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Fetch face descriptors for recognition
+  const faceDescriptors = useQuery(api.users.getAllFaceDescriptors);
+  
+  // Fetch today's attendance records
+  const attendanceRecords = useQuery(api.attendance.getTodayAttendance, { date: today }) as AttendanceRecord[] | undefined;
+  
+  // Mark attendance mutation
+  const markAttendanceMutation = useMutation(api.attendance.markAttendance);
 
-  const handleFaceRecognized = (personName: string) => {
-    setRecognizedPerson(personName);
+  const handleFaceRecognized = async (personName: string, personId: string) => {
+    try {
+      setRecognizedPerson(personName);
+      
+      if (!userId) {
+        toast({
+          variant: "destructive",
+          title: "Authentication error",
+          description: "You must be signed in to mark attendance",
+        });
+        return;
+      }
 
-    // In a real app, send this data to your backend
-    const newRecord = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: personName,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      date: new Date().toISOString().split('T')[0],
-    };
+      // Mark attendance in Convex
+      const result = await markAttendanceMutation({
+        userId: userId,
+        personName: personName,
+        personId: personId,
+        date: today,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
 
-    setAttendanceRecords([newRecord, ...attendanceRecords]);
-
-    toast({
-      title: "Attendance Marked",
-      description: `${personName}'s attendance has been recorded successfully`,
-    });
+      if (result.status === "already_marked") {
+        toast({
+          title: "Already Marked",
+          description: `${personName}'s attendance was already marked today`,
+        });
+      } else {
+        toast({
+          title: "Attendance Marked",
+          description: `${personName}'s attendance has been recorded successfully`,
+        });
+      }
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to mark attendance. Please try again.",
+      });
+    }
   };
 
   return (
@@ -78,6 +98,7 @@ const Attendance = () => {
               <FaceDetection
                 mode="recognition"
                 onFaceRecognized={handleFaceRecognized}
+                faceDescriptors={faceDescriptors || []}
               />
 
               {recognizedPerson && (
@@ -104,7 +125,7 @@ const Attendance = () => {
             </CardHeader>
             <CardContent>
               <div className="max-h-[350px] overflow-y-auto">
-                {attendanceRecords.length > 0 ? (
+                {attendanceRecords && attendanceRecords.length > 0 ? (
                   <table className="w-full text-sm">
                     <thead className="border-b text-left">
                       <tr>
@@ -114,8 +135,8 @@ const Attendance = () => {
                     </thead>
                     <tbody>
                       {attendanceRecords.map((record) => (
-                        <tr key={record.id} className="border-b border-neutral-100">
-                          <td className="py-3">{record.name}</td>
+                        <tr key={record._id} className="border-b border-neutral-100">
+                          <td className="py-3">{record.personName}</td>
                           <td className="py-3">{record.time}</td>
                         </tr>
                       ))}

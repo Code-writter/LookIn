@@ -6,14 +6,28 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Camera, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-type FaceDetectionProps = {
-  onFaceDetected?: (faceData: any) => void;
-  onFaceRecognized?: (personName: string) => void;
-  mode: "detection" | "recognition" | "registration";
-  personName?: string;
+type FaceDescriptor = {
+  id: string;
+  name: string;
+  personId: string;
+  descriptor: number[];
 };
 
-const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: FaceDetectionProps) => {
+type FaceDetectionProps = {
+  onFaceDetected?: (faceData: any) => void;
+  onFaceRecognized?: (personName: string, personId: string) => void;
+  mode: "detection" | "recognition" | "registration";
+  personName?: string;
+  faceDescriptors?: FaceDescriptor[];
+};
+
+const FaceDetection = ({ 
+  onFaceDetected, 
+  onFaceRecognized, 
+  mode, 
+  personName,
+  faceDescriptors = [] 
+}: FaceDetectionProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +36,7 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
   const [captureComplete, setCaptureComplete] = useState(false);
   const detectionInterval = useRef<number | null>(null);
   const { toast } = useToast();
+  const [recognizedName, setRecognizedName] = useState<string | null>(null);
 
   // Load face-api models
   useEffect(() => {
@@ -51,7 +66,6 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
     };
     loadModels();
 
-    // Create the models directory and fetch models in production
     return () => {
       if (detectionInterval.current) clearInterval(detectionInterval.current);
     };
@@ -91,6 +105,28 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
     }
   };
 
+  const recognizeFace = async (descriptor: Float32Array) => {
+    if (faceDescriptors.length === 0) return null;
+    
+    // Convert stored descriptors to FaceMatcher format
+    const labeledDescriptors = faceDescriptors.map(
+      user => new faceapi.LabeledFaceDescriptors(
+        `${user.name}|${user.personId}`, 
+        [new Float32Array(user.descriptor)]
+      )
+    );
+    
+    const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+    const match = faceMatcher.findBestMatch(descriptor);
+    
+    if (match.distance < 0.6) {
+      const [name, personId] = match.label.split('|');
+      return { name, personId };
+    }
+    
+    return null;
+  };
+
   const startDetection = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -100,7 +136,8 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
       const detections = await faceapi
         .detectAllFaces(videoRef.current!, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
-        .withFaceExpressions();
+        .withFaceExpressions()
+        .withFaceDescriptors();
 
       if (!canvasRef.current) return;
       
@@ -123,16 +160,25 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
       
       if (detections.length > 0) {
         const detection = detections[0];
-        if (onFaceDetected && mode === "registration") {
-          onFaceDetected(detection);
-        }
         
-        if (mode === "registration" && detections.length === 1) {
-          // If we're in registration mode and a face is detected, capture it
+        if (mode === "registration" && onFaceDetected) {
           if (detectionInterval.current) {
             clearInterval(detectionInterval.current);
           }
           captureFace(detection);
+        } else if (mode === "recognition" && detection.descriptor) {
+          // Try to recognize the face
+          const match = await recognizeFace(detection.descriptor);
+          if (match && onFaceRecognized && !recognizedName) {
+            setRecognizedName(match.name);
+            setCaptureComplete(true);
+            onFaceRecognized(match.name, match.personId);
+            
+            // Stop detection after recognition
+            if (detectionInterval.current) {
+              clearInterval(detectionInterval.current);
+            }
+          }
         }
       }
     }, 100);
@@ -221,7 +267,7 @@ const FaceDetection = ({ onFaceDetected, onFaceRecognized, mode, personName }: F
             <p className="mt-4 text-lg font-medium text-neutral-800">
               {mode === "registration" 
                 ? "Face registered successfully!" 
-                : "Face recognized!"}
+                : `Face recognized: ${recognizedName}`}
             </p>
           </div>
         )}

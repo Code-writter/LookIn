@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useAuth } from "@clerk/clerk-react";
 import {
   Table,
@@ -19,54 +19,25 @@ import {
 } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/ui/use-toast";
-
-// Mock data - will be replaced with actual Convex data
-const mockAttendanceData = [
-  {
-    id: "1",
-    name: "John Doe",
-    date: "2025-04-10",
-    timeIn: "08:45 AM",
-    status: "Present",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    date: "2025-04-10",
-    timeIn: "09:02 AM",
-    status: "Present",
-  },
-  {
-    id: "3",
-    name: "Michael Johnson",
-    date: "2025-04-10",
-    timeIn: "08:55 AM",
-    status: "Present",
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    date: "2025-04-10",
-    timeIn: "",
-    status: "Absent",
-  },
-];
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const Dashboard = () => {
-  const { isLoaded, userId, sessionId, getToken, has } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isLoaded, userId, has } = useAuth();
   const { toast } = useToast();
-  const [attendanceData, setAttendanceData] = useState(mockAttendanceData);
+  
+  // Get statistics from Convex
+  const stats = useQuery(api.attendance.getUserStatistics);
+  
+  // Get all attendance records
+  const attendanceData = useQuery(api.attendance.getAllAttendance);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Check if user is admin
     const checkUserRole = async () => {
       if (isLoaded && userId) {
-        // In a real app, we'd check the user's role from Clerk
-        // For now, we'll assume the user is an admin if they're authenticated
         const hasAdminRole = has({ role: "admin" });
-        setIsAdmin(hasAdminRole);
-
+        
         if (!hasAdminRole) {
           toast({
             title: "Access Denied",
@@ -79,22 +50,6 @@ const Dashboard = () => {
 
     checkUserRole();
   }, [isLoaded, userId, has, toast]);
-
-  // In the future, this would fetch data from Convex
-  useEffect(() => {
-    // Fetch attendance data from Convex would go here
-    // For now, we're using mock data
-  }, []);
-
-  const presentCount = attendanceData.filter(
-    (record) => record.status === "Present"
-  ).length;
-  const absentCount = attendanceData.filter(
-    (record) => record.status === "Absent"
-  ).length;
-  const attendanceRate = Math.round(
-    (presentCount / attendanceData.length) * 100
-  );
 
   if (!isLoaded) {
     return <div>Loading...</div>;
@@ -119,7 +74,7 @@ const Dashboard = () => {
               <CardTitle>Total Present</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{presentCount}</p>
+              <p className="text-3xl font-bold">{stats?.presentToday || 0}</p>
             </CardContent>
           </Card>
 
@@ -128,7 +83,7 @@ const Dashboard = () => {
               <CardTitle>Total Absent</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{absentCount}</p>
+              <p className="text-3xl font-bold">{stats?.absentToday || 0}</p>
             </CardContent>
           </Card>
 
@@ -137,7 +92,7 @@ const Dashboard = () => {
               <CardTitle>Attendance Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{attendanceRate}%</p>
+              <p className="text-3xl font-bold">{stats?.attendanceRate || 0}%</p>
             </CardContent>
           </Card>
         </div>
@@ -151,7 +106,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableCaption>Attendance records for today</TableCaption>
+              <TableCaption>Complete attendance records</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -161,20 +116,14 @@ const Dashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {attendanceData.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.name}</TableCell>
+                {attendanceData && attendanceData.map((record) => (
+                  <TableRow key={record._id}>
+                    <TableCell className="font-medium">{record.personName}</TableCell>
                     <TableCell>{record.date}</TableCell>
-                    <TableCell>{record.timeIn || "N/A"}</TableCell>
+                    <TableCell>{record.time}</TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          record.status === "Present"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {record.status}
+                      <span className="inline-flex rounded-full px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
+                        Present
                       </span>
                     </TableCell>
                   </TableRow>
